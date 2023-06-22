@@ -31,6 +31,8 @@ async fn main() {
     let listener = {
         let listen_address = (CONFIG.host.as_str(), CONFIG.port);
 
+        trace!("Binding to address {:?}", &listen_address);
+
         TcpListener::bind(listen_address).unwrap_or_else(|e| {
             error!("Failed to bind to address {:?}: {}", &listen_address, e);
             exit(1);

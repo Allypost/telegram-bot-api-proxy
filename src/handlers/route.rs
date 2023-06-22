@@ -19,16 +19,18 @@ pub async fn handle_serve_file(
     Path((bot_id, file_path)): Path<(String, PathBuf)>,
 ) -> impl IntoResponse {
     let base_path = &CONFIG.base_path;
-    debug!("base_path: {path:?}", path = &base_path);
+    trace!("base_path: {path:?}", path = &base_path);
 
-    let local_file_path = base_path
-        .join(&bot_id)
-        .join(&file_path)
-        .canonicalize()
-        .map_err(|e| {
-            debug!("canonicalize error: {error:?}", error = &e);
-            StatusCode::NOT_FOUND
-        })?;
+    let local_file_path = base_path.join(&bot_id).join(&file_path);
+    trace!("local_file_path: {path:?}", path = &local_file_path);
+    let local_file_path = local_file_path.canonicalize().map_err(|e| {
+        debug!("canonicalize error: {error:?}", error = &e);
+        StatusCode::NOT_FOUND
+    })?;
+    trace!(
+        "canonicalized local_file_path: {path:?}",
+        path = &local_file_path
+    );
 
     if !local_file_path.starts_with(base_path) {
         return Err(StatusCode::NOT_FOUND);
@@ -37,7 +39,9 @@ pub async fn handle_serve_file(
     let file = File::open(local_file_path).await.map_err(|e| {
         debug!("open error: {error:?}", error = &e);
         StatusCode::NOT_FOUND
-    })?;
+    });
+    trace!("file: {file:?}");
+    let file = file?;
 
     let _metadata = file.metadata().await.map_err(|e| {
         debug!("metadata error: {error:?}", error = &e);
@@ -65,7 +69,7 @@ pub async fn handle_post_file(
 
         let uri = format!("{base}{path_query}", base = CONFIG.proxy_to);
 
-        trace!("proxying {path_query} to {uri}");
+        trace!("getting response from {uri}");
 
         uri
     };
@@ -76,6 +80,8 @@ pub async fn handle_post_file(
             error!("client error: {}", e);
             (StatusCode::BAD_GATEWAY, e.to_string())
         });
+
+        trace!("resp from remote: {resp:?}", resp = &resp);
 
         match resp {
             Ok(resp) if resp.status() == StatusCode::OK => resp,
@@ -93,6 +99,8 @@ pub async fn handle_post_file(
             return resp.into_response();
         };
 
+        trace!("resp_body: {resp_body:?}", resp_body = &resp_body);
+
         match resp_body.get("ok") {
             Some(Value::Bool(true)) => {}
             _ => return resp.into_response(),
@@ -108,7 +116,11 @@ pub async fn handle_post_file(
         return resp.into_response();
     };
 
-    let Some((_, real_path)) = file_path.split_once(&bot_id) else {
+    let split = file_path.split_once(&bot_id);
+
+    trace!("split result: {split:?}", split = &split);
+
+    let Some((_, real_path)) = split else {
         return resp.into_response();
     };
 
@@ -140,7 +152,7 @@ pub async fn handle_proxy(
         .map_or(path, axum::http::uri::PathAndQuery::as_str)
         .trim_start_matches('/');
     let uri = format!("{base}{path_query}", base = CONFIG.proxy_to);
-    trace!("proxying {path_query} to {uri}");
+    trace!("proxying /{path_query} to {uri}");
 
     *req.uri_mut() = uri.parse().unwrap();
 
