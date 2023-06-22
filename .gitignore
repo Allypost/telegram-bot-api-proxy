@@ -1,2 +1,3 @@
 /target
 /tmp-mnt
+docker-compose.*.yml
