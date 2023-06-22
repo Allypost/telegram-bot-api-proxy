@@ -1,0 +1,25 @@
+[package]
+name = "telegram-bot-api-proxy"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.71"
+axum = { version = "0.6.18", features = ["macros", "headers"] }
+clap = { version = "4.3.4", features = ["derive", "env"] }
+hyper = { version = "0.14.26", features = ["full"] }
+lazy_static = "1.4.0"
+log = "0.4.19"
+reqwest = { version = "0.11.18", default-features = false, features = ["tokio-rustls"] }
+resolve-path = "0.1.0"
+serde = { version = "1.0.164", features = ["alloc", "derive"] }
+serde_json = { version = "1.0.97", features = ["alloc"] }
+tokio = { version = "1.28.2", features = ["rt-multi-thread", "macros", "fs"] }
+tokio-stream = { version = "0.1.14", features = ["fs"] }
+tokio-util = { version = "0.7.8", features = ["io"] }
+tower = "0.4.13"
+tower-http = { version = "0.4.0", features = ["trace"] }
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = ["json", "env-filter"] }
